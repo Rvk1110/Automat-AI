@@ -1,0 +1,6 @@
+{
+  "name": "AutoMat AI",
+  "description": "AI-Based Material Selection System for Automotive Applications. An interactive, research-grade engineering decision support terminal inspired by CES EduPack and Materials Studio.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
