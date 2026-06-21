@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { 
   Sparkles, 
   Percent, 
@@ -10,7 +10,9 @@ import {
   Calculator,
   Compass,
   CornerDownRight,
-  Award
+  Award,
+  Loader2,
+  AlertTriangle
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Material, ComponentType, CriteriaWeights, TopsisResult } from '../types';
@@ -87,8 +89,76 @@ export default function ExplainableAIView({
     return `W⃗ = [${elements.join(', ')}]`;
   }, [criteriaWeights]);
 
-  // Structured academic commentary text
-  const scientificExpl = useMemo(() => {
+  const [aiExplanation, setAiExplanation] = useState<{
+    summary: string;
+    comparison: string;
+    tradeoffs: string;
+    conclusion: string;
+  } | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [apiError, setApiError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!topResult || !runnerUpResult) return;
+
+    let isMounted = true;
+    setLoading(true);
+    setApiError(null);
+
+    const controller = new AbortController();
+
+    async function fetchExplanation() {
+      try {
+        const response = await fetch('/api/explain', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            component: selectedComponent,
+            topMaterial: topResult.material,
+            runnerUpMaterial: runnerUpResult.material,
+            topScore: topResult.score,
+            runnerUpScore: runnerUpResult.score,
+            weights: criteriaWeights,
+          }),
+          signal: controller.signal,
+        });
+
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}));
+          throw new Error(errData.error || `HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        if (isMounted) {
+          setAiExplanation(data);
+          setLoading(false);
+        }
+      } catch (err: any) {
+        if (err.name !== 'AbortError') {
+          console.warn('Failed to generate AI explanation:', err);
+          if (isMounted) {
+            setApiError(err.message || 'Unknown error');
+            setLoading(false);
+          }
+        }
+      }
+    }
+
+    const debounceTimer = setTimeout(() => {
+      fetchExplanation();
+    }, 400);
+
+    return () => {
+      isMounted = false;
+      clearTimeout(debounceTimer);
+      controller.abort();
+    };
+  }, [selectedComponent, topResult?.material?.id, runnerUpResult?.material?.id, criteriaWeights]);
+
+  // Structured academic commentary text (fallback if API fails or is loading)
+  const localExpl = useMemo(() => {
     if (!topResult || !runnerUpResult) {
       return { summary: '', comparison: '', tradeoffs: '', conclusion: '' };
     }
@@ -101,6 +171,8 @@ export default function ExplainableAIView({
       criteriaWeights
     );
   }, [selectedComponent, topResult, runnerUpResult, criteriaWeights]);
+
+  const scientificExpl = aiExplanation && !loading ? aiExplanation : localExpl;
 
   return (
     <div id="explainable-ai-view" className="space-y-6">
@@ -238,11 +310,31 @@ export default function ExplainableAIView({
 
       {/* Large AI Explanation Card - Academic Discussion layout */}
       <div id="ai-explanation-academic-card" className="bg-white/5 border border-white/10 rounded-lg p-4 space-y-4">
-        <h4 className="text-xs font-bold border-l-2 border-blue-500 pl-2 uppercase tracking-wide text-white mb-2">
-          Systematic AI Decision Rationale & Discussion
-        </h4>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-white/5 pb-3">
+          <h4 className="text-xs font-bold border-l-2 border-blue-500 pl-2 uppercase tracking-wide text-white">
+            Systematic AI Decision Rationale & Discussion
+          </h4>
+          {loading && (
+            <div className="flex items-center gap-1.5 text-[10px] text-blue-400 font-mono animate-pulse">
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              <span>Querying Gemini 2.5-flash...</span>
+            </div>
+          )}
+          {!loading && apiError && (
+            <div className="flex items-center gap-1.5 text-[9px] text-amber-500 font-mono bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20" title={apiError}>
+              <AlertTriangle className="w-3 h-3" />
+              <span>Local Model Fallback (API Key Offline)</span>
+            </div>
+          )}
+          {!loading && !apiError && aiExplanation && (
+            <div className="flex items-center gap-1.5 text-[9px] text-emerald-400 font-mono bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+              <Sparkles className="w-3 h-3 text-emerald-400" />
+              <span>AI Rationale Synced</span>
+            </div>
+          )}
+        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-slate-300 font-sans leading-relaxed">
+        <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-slate-300 font-sans leading-relaxed ${loading ? 'opacity-40 animate-pulse select-none' : ''}`}>
           
           {/* Why Selected */}
           <div className="space-y-1 p-3 rounded bg-white/5 border border-white/10">

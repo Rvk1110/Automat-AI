@@ -1,47 +1,31 @@
-import tailwindcss from '@tailwindcss/vite';
-import react from '@vitejs/plugin-react';
+import express from 'express';
 import path from 'path';
-import {defineConfig} from 'vite';
-import { GoogleGenAI } from '@google/genai';
 import dotenv from 'dotenv';
+import { GoogleGenAI } from '@google/genai';
 
 dotenv.config();
 
-export default defineConfig(() => {
-  return {
-    plugins: [react(), tailwindcss()],
-    resolve: {
-      alias: {
-        '@': path.resolve(__dirname, '.'),
-      },
-    },
-    server: {
-      // HMR is disabled in AI Studio via DISABLE_HMR env var.
-      // Do not modify—file watching is disabled to prevent flickering during agent edits.
-      hmr: process.env.DISABLE_HMR !== 'true',
-      // Disable file watching when DISABLE_HMR is true to save CPU during agent edits.
-      watch: process.env.DISABLE_HMR === 'true' ? null : {},
-      configureServer(server) {
-        server.middlewares.use(async (req, res, next) => {
-          if (req.url === '/api/explain' && req.method === 'POST') {
-            let body = '';
-            req.on('data', chunk => {
-              body += chunk;
-            });
-            req.on('end', async () => {
-              try {
-                const { component, topMaterial, runnerUpMaterial, topScore, runnerUpScore, weights } = JSON.parse(body);
-                
-                const apiKey = process.env.GEMINI_API_KEY;
-                if (!apiKey) {
-                  res.writeHead(500, { 'Content-Type': 'application/json' });
-                  res.end(JSON.stringify({ error: 'GEMINI_API_KEY environment variable is not set.' }));
-                  return;
-                }
+const app = express();
+const port = process.env.PORT || 3000;
 
-                const ai = new GoogleGenAI({ apiKey });
-                
-                const prompt = `You are AutoMat AI, an expert materials scientist and automotive design engineer.
+app.use(express.json());
+
+// Serve static files from 'dist'
+app.use(express.static(path.join(__dirname, 'dist')));
+
+// Gemini API endpoint
+app.post('/api/explain', async (req, res) => {
+  try {
+    const { component, topMaterial, runnerUpMaterial, topScore, runnerUpScore, weights } = req.body;
+    
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      return res.status(500).json({ error: 'GEMINI_API_KEY environment variable is not set.' });
+    }
+
+    const ai = new GoogleGenAI({ apiKey });
+    
+    const prompt = `You are AutoMat AI, an expert materials scientist and automotive design engineer.
 Provide a mathematically rigorous, detailed, and explainable AI justification for why ${topMaterial.name} (${topMaterial.grade}) is ranked #1 for a vehicle ${component} over the runner-up ${runnerUpMaterial.name} (${runnerUpMaterial.grade}) using the TOPSIS method.
 
 Context:
@@ -63,27 +47,27 @@ Generate a structured analysis in JSON format with exactly the following 4 keys:
 
 Output only valid JSON. Do not wrap it in markdown blocks or json block formatting. Output the raw JSON string directly.`;
 
-                const response = await ai.models.generateContent({
-                  model: 'gemini-2.5-flash',
-                  contents: prompt,
-                  config: {
-                    responseMimeType: 'application/json',
-                  }
-                });
-
-                const text = response.text;
-                res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(text || '{}');
-              } catch (err: any) {
-                res.writeHead(500, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ error: err.message || 'Internal Server Error' }));
-              }
-            });
-          } else {
-            next();
-          }
-        });
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: {
+        responseMimeType: 'application/json',
       }
-    },
-  };
+    });
+
+    const text = response.text;
+    res.json(JSON.parse(text || '{}'));
+  } catch (error: any) {
+    console.error('Error generating explanation:', error);
+    res.status(500).json({ error: error.message || 'Internal Server Error' });
+  }
+});
+
+// Fallback to index.html for SPA routing
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+});
+
+app.listen(port, () => {
+  console.log(`Server running at http://localhost:${port}`);
 });

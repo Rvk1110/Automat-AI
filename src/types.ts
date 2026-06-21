@@ -2,7 +2,16 @@ export interface Material {
   id: string;
   name: string;
   grade: string;
-  materialClass: 'Steel' | 'Aluminum' | 'Magnesium' | 'Titanium' | 'CFRP' | 'GFRP';
+  materialClass: 
+    | 'Steel'
+    | 'Stainless Steel'
+    | 'Aluminum Alloys'
+    | 'Magnesium Alloys'
+    | 'Titanium Alloys'
+    | 'Cast Iron'
+    | 'Copper Alloys'
+    | 'Carbon Fiber Reinforced Polymer'
+    | 'Glass Fiber Reinforced Polymer';
   density: number;          // g/cm3 (lower is better)
   strength: number;         // MPa (higher is better)
   cost: number;             // USD/kg index (lower is better)

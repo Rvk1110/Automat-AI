@@ -24,7 +24,7 @@ export function runTopsis(materials: Material[], rawWeights: CriteriaWeights): T
     sustainability: true  // Higher sustainability index is better
   };
 
-  // Map database properties to the criteria keys
+  // Map properties to the criteria keys
   const propMap: Record<string, keyof Material> = {
     strength: 'strength',
     weight: 'density', // density is minimized to achieve low weight

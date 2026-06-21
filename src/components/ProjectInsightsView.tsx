@@ -62,7 +62,7 @@ export default function ProjectInsightsView() {
           </div>
           <ul className="space-y-1 text-xs text-slate-300 font-sans list-disc pl-4 leading-relaxed">
             <li>Formulate an automated, mathematically rigorous TOPSIS multi-criteria solver.</li>
-            <li>Maintain an extensive, cohesive engineering database of advanced automotive metals and composites.</li>
+            <li>Maintain an extensive, cohesive engineering collection of advanced automotive metals and composites.</li>
             <li>Incorporate modern Ashby Plot envelope curves and correlation heatmap algorithms for detailed property analyses.</li>
             <li>Synthesize high-fidelity natural language AI commentaries detailing tradeoffs to elevate explainability (XAI).</li>
           </ul>
@@ -174,7 +174,7 @@ export default function ProjectInsightsView() {
             <div className="space-y-1 font-sans">
               <span className="text-[9px] font-mono font-black text-purple-400 uppercase tracking-wider block">Future Scope Expansion</span>
               <p className="text-[10px] text-slate-400 leading-relaxed">
-                Plan to incorporate high-throughput finite element analysis (FEA) plugins, expand the composite database to 100+ grades, and offer native CAD export links.
+                Plan to incorporate high-throughput finite element analysis (FEA) plugins, expand the composite repository to 100+ grades, and offer native CAD export links.
               </p>
             </div>
           </div>

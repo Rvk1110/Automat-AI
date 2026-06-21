@@ -2,7 +2,6 @@ import { useMemo } from 'react';
 import { 
   BarChart, 
   Sparkles, 
-  Database, 
   Layers, 
   Activity, 
   TrendingUp, 
@@ -186,16 +185,7 @@ export default function DashboardView({
       </div>
 
       {/* KPI Cards Grid */}
-      <div id="kpi-grid" className="grid grid-cols-2 lg:grid-cols-6 gap-3">
-        {/* Card 1 */}
-        <div id="kpi-avail" className="bg-blue-900/10 border border-blue-800/30 rounded p-3 flex flex-col justify-center">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] uppercase opacity-50">Materials</span>
-            <Database className="w-3.5 h-3.5 text-blue-400" />
-          </div>
-          <p className="text-xl font-bold text-blue-100 mt-2">{stats.count}</p>
-          <p className="text-[8px] font-mono text-slate-500 mt-0.5 uppercase tracking-tighter">Database items</p>
-        </div>
+      <div id="kpi-grid" className="grid grid-cols-2 lg:grid-cols-5 gap-3">
 
         {/* Card 2 */}
         <div id="kpi-classes" className="bg-blue-900/10 border border-blue-800/30 rounded p-3 flex flex-col justify-center">
@@ -349,7 +339,7 @@ export default function DashboardView({
             <h2 className="text-xs font-bold border-l-2 border-blue-500 pl-2 uppercase tracking-wide text-white">
               Aggregate Material Fingerprint
             </h2>
-            <p className="text-[11px] text-slate-400 mt-1.5 font-sans">Multi-dimensional operational performance averaged across all database materials.</p>
+            <p className="text-[11px] text-slate-400 mt-1.5 font-sans">Multi-dimensional operational performance averaged across all available materials.</p>
           </div>
           <div className="flex-1 min-h-[220px] flex items-center justify-center">
             <ResponsiveContainer width="100%" height="100%">

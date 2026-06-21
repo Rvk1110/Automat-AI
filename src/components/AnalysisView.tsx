@@ -35,13 +35,28 @@ import { calculateCorrelations, countBoxStats } from '../utils';
 export default function AnalysisView() {
   
   // Pre-initialize check list with 5 representative materials of different classes
-  const [selectedIds, setSelectedIds] = useState<string[]>([
-    'mat_boron',       // Steel
-    'mat_al7075',      // Aluminum
-    'mat_mg_az91',     // Magnesium
-    'mat_ti64',        // Titanium
-    'mat_cfrp_epoxy'   // CFRP
-  ]);
+  const [selectedIds, setSelectedIds] = useState<string[]>(() => {
+    const reps = [
+      MATERIALS.find(m => m.materialClass === 'Steel')?.id,
+      MATERIALS.find(m => m.materialClass === 'Aluminum Alloys')?.id,
+      MATERIALS.find(m => m.materialClass === 'Magnesium Alloys')?.id,
+      MATERIALS.find(m => m.materialClass === 'Titanium Alloys')?.id,
+      MATERIALS.find(m => m.materialClass === 'Carbon Fiber Reinforced Polymer')?.id,
+    ].filter(Boolean) as string[];
+    return reps.length >= 2 ? reps : MATERIALS.slice(0, 5).map(m => m.id);
+  });
+
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [classFilter, setClassFilter] = useState<string>('All');
+
+  const filteredChecklistMaterials = useMemo(() => {
+    return MATERIALS.filter(m => {
+      const matchesSearch = m.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                            m.grade.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesClass = classFilter === 'All' || m.materialClass === classFilter;
+      return (matchesSearch && matchesClass) || selectedIds.includes(m.id);
+    }).slice(0, 15); // Limit to 15 items for clean layout
+  }, [searchTerm, classFilter, selectedIds]);
 
   // Handle select/deselect limit to 5 max
   const handleToggleMaterial = (id: string) => {
@@ -141,12 +156,44 @@ export default function AnalysisView() {
       </div>
 
       {/* Select Comparative Checkbox Panel */}
-      <div id="selection-checkbox-bar" className="bg-white/5 border border-white/10 rounded-lg p-4">
-        <h4 className="text-xs font-bold border-l-2 border-blue-500 pl-2 uppercase tracking-wide text-white mb-3">
-          Select comparative candidates (Choose 2 to 5 materials):
-        </h4>
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2">
-          {MATERIALS.map(m => {
+      <div id="selection-checkbox-bar" className="bg-white/5 border border-white/10 rounded-lg p-4 space-y-4">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 border-b border-white/5 pb-3">
+          <div>
+            <h4 className="text-xs font-bold border-l-2 border-blue-500 pl-2 uppercase tracking-wide text-white">
+              Select comparative candidates (Choose 2 to 5 materials):
+            </h4>
+            <p className="text-[10px] text-slate-500 font-mono mt-0.5">Showing matching candidates. Currently selected: {selectedIds.length} / 5</p>
+          </div>
+          
+          <div className="flex items-center gap-2 w-full md:w-auto">
+            <input 
+              type="text"
+              placeholder="Search materials..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="bg-[#0B0F19] border border-white/10 rounded px-2.5 py-1 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 w-full md:w-44 font-mono animate-none"
+            />
+            <select
+              value={classFilter}
+              onChange={(e) => setClassFilter(e.target.value)}
+              className="bg-[#0B0F19] border border-white/10 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-blue-500 cursor-pointer font-sans"
+            >
+              <option value="All">All Classes</option>
+              <option value="Steel">Steel</option>
+              <option value="Stainless Steel">Stainless Steel</option>
+              <option value="Aluminum Alloys">Aluminum Alloys</option>
+              <option value="Magnesium Alloys">Magnesium Alloys</option>
+              <option value="Titanium Alloys">Titanium Alloys</option>
+              <option value="Cast Iron">Cast Iron</option>
+              <option value="Copper Alloys">Copper Alloys</option>
+              <option value="Carbon Fiber Reinforced Polymer">CFRP</option>
+              <option value="Glass Fiber Reinforced Polymer">GFRP</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-2">
+          {filteredChecklistMaterials.map(m => {
             const isSelected = selectedIds.includes(m.id);
             const isAtMax = selectedIds.length >= 5 && !isSelected;
             const isAtMin = selectedIds.length <= 2 && isSelected;
@@ -164,14 +211,17 @@ export default function AnalysisView() {
                 } ${(isAtMax || isAtMin) ? 'opacity-40 cursor-not-allowed' : ''}`}
               >
                 <div className="flex justify-between items-center w-full">
-                  <span className="font-sans font-bold truncate pr-1">{m.name}</span>
+                  <span className="font-sans font-bold truncate pr-1" title={m.name}>{m.name}</span>
                   {isSelected ? (
                     <Check className="w-3 h-3 flex-shrink-0" style={{ color: CLASS_COLORS[m.materialClass] }} />
                   ) : (
                     <Plus className="w-3 h-3 flex-shrink-0 text-slate-600" />
                   )}
                 </div>
-                <span className="text-[9px] font-mono mt-0.5 text-slate-500">{m.grade}</span>
+                <div className="flex justify-between items-center w-full mt-1">
+                  <span className="text-[9px] font-mono text-slate-500">{m.grade}</span>
+                  <span className="text-[8px] font-mono opacity-50 px-1 rounded bg-white/5 border border-white/5">{m.materialClass.split(' ')[0]}</span>
+                </div>
               </button>
             );
           })}
@@ -524,7 +574,7 @@ export default function AnalysisView() {
               <text x="360" y="90" textAnchor="middle" fill="#94a3b8">Max: {boxPlotStats.max}</text>
             </svg>
             <p className="text-[10px] text-slate-500 leading-relaxed text-center mt-3 max-w-sm">
-              Displays standard five-number density envelope summary of database (1.45 to 8.00 g/cm³). Interquartile Range (IQR) represents composite-to-metal weight differentials.
+              Displays standard five-number density envelope summary of available candidates (1.45 to 8.00 g/cm³). Interquartile Range (IQR) represents composite-to-metal weight differentials.
             </p>
           </div>
         </div>
