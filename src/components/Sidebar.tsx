@@ -7,7 +7,12 @@ import {
   BookOpen, 
   ChevronLeft, 
   ChevronRight,
-  ShieldAlert
+  ShieldAlert,
+  Fingerprint,
+  TrendingUp,
+  Layers,
+  Scale,
+  Database
 } from 'lucide-react';
 import { motion } from 'motion/react';
 
@@ -23,6 +28,11 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
     { id: 'dashboard', name: 'Dashboard', icon: LayoutDashboard },
     { id: 'selection', name: 'Material Selection', icon: Sliders },
     { id: 'analysis', name: 'Material Analysis', icon: FlaskConical },
+    { id: 'fingerprint', name: 'Material Fingerprint', icon: Fingerprint },
+    { id: 'sensitivity', name: 'Sensitivity Analysis', icon: TrendingUp },
+    { id: 'comparison', name: 'Comparison Lab', icon: Layers },
+    { id: 'benchmarks', name: 'Benchmarks', icon: Scale },
+    { id: 'analytics', name: 'Dataset Analytics', icon: Database },
     { id: 'xai', name: 'Explainable AI', icon: Sparkles },
     { id: 'insights', name: 'Project Insights', icon: BookOpen },
   ];

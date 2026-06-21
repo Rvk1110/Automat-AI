@@ -5,9 +5,15 @@ import SelectionView from './components/SelectionView';
 import AnalysisView from './components/AnalysisView';
 import ExplainableAIView from './components/ExplainableAIView';
 import ProjectInsightsView from './components/ProjectInsightsView';
+import MaterialFingerprint from './components/MaterialFingerprint';
+import SensitivityAnalysisView from './components/SensitivityAnalysisView';
+import ComparisonView from './components/ComparisonView';
+import BenchmarkView from './components/BenchmarkView';
+import DatasetAnalyticsView from './components/DatasetAnalyticsView';
 import { ComponentType, CriteriaWeights, RecommendationHistory } from './types';
 import { INITIAL_HISTORY, COMPONENT_PROFILES, MATERIALS } from './data';
-import { runTopsis } from './utils';
+import { runTopsis } from './services/topsis_service';
+import { exportReportToPDF } from './services/pdf_service';
 import { HelpCircle, Terminal, RefreshCw, FileCode, Printer } from 'lucide-react';
 
 export default function App() {
@@ -47,9 +53,9 @@ export default function App() {
     }
   };
 
-  // Triggers browser print which formats the print-only report view for PDF generation
+  // Generate high-fidelity IEEE PDF report using html2canvas & jsPDF
   const handleDownloadReport = () => {
-    window.print();
+    exportReportToPDF('print-only-report', `automat_mcda_report_${selectedComponent}.pdf`);
   };
 
   // Exports currently compiled results as raw JSON data for research pipelines
@@ -140,6 +146,42 @@ export default function App() {
 
             {activeTab === 'analysis' && (
               <AnalysisView />
+            )}
+
+            {activeTab === 'fingerprint' && (
+              <MaterialFingerprint 
+                selectedComponent={selectedComponent}
+                setSelectedComponent={setSelectedComponent}
+                criteriaWeights={criteriaWeights}
+                setCriteriaWeights={setCriteriaWeights}
+                topsisRankings={topsisRankings}
+              />
+            )}
+
+            {activeTab === 'sensitivity' && (
+              <SensitivityAnalysisView 
+                selectedComponent={selectedComponent}
+                setSelectedComponent={setSelectedComponent}
+                criteriaWeights={criteriaWeights}
+                setCriteriaWeights={setCriteriaWeights}
+                topsisRankings={topsisRankings}
+              />
+            )}
+
+            {activeTab === 'comparison' && (
+              <ComparisonView />
+            )}
+
+            {activeTab === 'benchmarks' && (
+              <BenchmarkView 
+                selectedComponent={selectedComponent}
+                criteriaWeights={criteriaWeights}
+                topsisRankings={topsisRankings}
+              />
+            )}
+
+            {activeTab === 'analytics' && (
+              <DatasetAnalyticsView />
             )}
 
             {activeTab === 'xai' && (

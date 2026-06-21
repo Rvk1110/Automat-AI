@@ -67258,7 +67258,7 @@ app.use(import_express.default.json());
 app.use(import_express.default.static(import_path.default.join(__dirname, "dist")));
 app.post("/api/explain", async (req, res) => {
   try {
-    const { component, topMaterial, runnerUpMaterial, topScore, runnerUpScore, weights } = req.body;
+    const { component, topMaterial, runnerUpMaterial, topScore, runnerUpScore, weights, attribution } = req.body;
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
       return res.status(500).json({ error: "GEMINI_API_KEY environment variable is not set." });
@@ -67270,6 +67270,8 @@ Provide a mathematically rigorous, detailed, and explainable AI justification fo
 Context:
 - Selected Component: ${component}
 - Weights applied: Strength: ${weights.strength}, Mass Reduction (Density): ${weights.weight}, Cost: ${weights.cost}, Corrosion Shield: ${weights.corrosion}, Wear Resistance: ${weights.wear}, Eco Sustainability: ${weights.sustainability}
+- Attribute Contributions to the Rank #1 score:
+  Strength: ${attribution?.strength || 0}%, Weight Efficiency: ${attribution?.weight || 0}%, Cost Efficiency: ${attribution?.cost || 0}%, Corrosion Shield: ${attribution?.corrosion || 0}%, Wear Resistance: ${attribution?.wear || 0}%, Sustainability: ${attribution?.sustainability || 0}%
 - Rank #1 Material: ${topMaterial.name} (${topMaterial.grade}, Class: ${topMaterial.materialClass})
   Properties: Density: ${topMaterial.density} g/cm\xB3, Tensile Strength: ${topMaterial.strength} MPa, Cost Score: ${topMaterial.cost}, Corrosion: ${topMaterial.corrosion}/10, Wear: ${topMaterial.wear}/10, Sustainability: ${topMaterial.sustainability}/10, Elastic Modulus: ${topMaterial.elasticModulus} GPa, Hardness: ${topMaterial.hardness} HB.
   TOPSIS Score: ${topScore.toFixed(4)}
@@ -67279,7 +67281,7 @@ Context:
   Confidence Gap (\u0394S): ${(topScore - runnerUpScore).toFixed(4)}
 
 Generate a structured analysis in JSON format with exactly the following 4 keys:
-1. "summary": A concise technical summary (2-3 sentences) explaining why the top material was selected. Mention the component, key weights, and TOPSIS index.
+1. "summary": A concise technical summary (2-3 sentences) explaining why the top material was selected. Mention the component, key weights, and TOPSIS index. Mention how the strongest contributing attribute of ${attribution?.strength || 0}% strength / ${attribution?.weight || 0}% weight efficiency influenced this choice.
 2. "comparison": A detailed comparison of the top material and the runner-up, highlighting the performance differential (\u0394S) and why the runner-up was not chosen despite any competitive single-property advantages.
 3. "tradeoffs": A balanced discussion of the trade-offs and compromises involved in selecting the top material (e.g., cost premium vs. weight savings, or density footprint), referencing mechanical limits or compliance factors.
 4. "conclusion": An engineering conclusion confirming compliance with Federal Motor Vehicle Safety Standards (FMVSS) for integration in the ${component}, stating why it provides the best lifecycle/structural compromise.

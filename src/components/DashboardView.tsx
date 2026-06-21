@@ -9,7 +9,10 @@ import {
   Flame, 
   Award,
   Download,
-  Printer
+  Printer,
+  ShieldCheck,
+  AlertTriangle,
+  CheckCircle
 } from 'lucide-react';
 import { 
   ResponsiveContainer, 
@@ -31,8 +34,9 @@ import {
   Legend
 } from 'recharts';
 import { Material, RecommendationHistory, ComponentType } from '../types';
-import { MATERIALS, CLASS_COLORS } from '../data';
-import { runTopsis } from '../utils';
+import { MATERIALS, CLASS_COLORS, COMPONENT_PROFILES } from '../data';
+import { runTopsis } from '../services/topsis_service';
+import { validateRecommendations } from '../services/validation_service';
 
 interface DashboardViewProps {
   onNavigateToSelection: (componentName?: ComponentType) => void;
@@ -47,6 +51,21 @@ export default function DashboardView({
   onDownloadReport,
   onExportPNG
 }: DashboardViewProps) {
+
+  // Calculate recommendation validations
+  const validationSummary = useMemo(() => {
+    const defaultRecs = (Object.keys(COMPONENT_PROFILES) as ComponentType[]).map((comp) => {
+      const profile = COMPONENT_PROFILES[comp];
+      const rankings = runTopsis(MATERIALS, profile.weights);
+      const top = rankings[0].material;
+      return {
+        component: comp,
+        materialName: `${top.name} (${top.grade})`,
+        materialClass: top.materialClass
+      };
+    });
+    return validateRecommendations(defaultRecs);
+  }, []);
 
   // Dynamic calculations of general KPI data
   const stats = useMemo(() => {
@@ -454,6 +473,102 @@ export default function DashboardView({
           </div>
         </div>
 
+      </div>
+
+      {/* MCDA Validation Laboratory Panel */}
+      <div id="validation-laboratory" className="bg-white/5 border border-white/10 rounded-lg p-5 space-y-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/10 pb-4">
+          <div>
+            <h2 className="text-xs font-bold border-l-2 border-blue-500 pl-2 uppercase tracking-wide text-white flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-emerald-450" />
+              MCDA Validation Laboratory
+            </h2>
+            <p className="text-[11px] text-slate-400 mt-1 font-sans">
+              Automated verification of TOPSIS algorithmic recommendations against established automotive engineering literature standards.
+            </p>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-mono text-emerald-400 uppercase tracking-widest px-2.5 py-1 rounded bg-emerald-500/10 border border-emerald-500/20 flex items-center gap-1.5 font-bold">
+              <CheckCircle className="w-3.5 h-3.5" />
+              Verified Accuracy: {validationSummary.accuracy}%
+            </span>
+          </div>
+        </div>
+
+        {/* Stats Cards Row */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-blue-950/20 border border-blue-900/30 rounded p-3.5 flex flex-col justify-center">
+            <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Total Validation Cases</span>
+            <span className="text-xl font-bold text-blue-100 mt-1">{validationSummary.totalCases}</span>
+            <span className="text-[9px] text-slate-500 mt-0.5 uppercase tracking-tighter">Component profiles</span>
+          </div>
+          
+          <div className="bg-blue-950/20 border border-blue-900/30 rounded p-3.5 flex flex-col justify-center">
+            <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Validation Accuracy</span>
+            <div className="flex items-center gap-2 mt-1">
+              <span className="text-xl font-bold text-emerald-400">{validationSummary.accuracy}%</span>
+              <div className="w-12 h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${validationSummary.accuracy}%` }}></div>
+              </div>
+            </div>
+            <span className="text-[9px] text-slate-500 mt-0.5 uppercase tracking-tighter">Literature agreement</span>
+          </div>
+          
+          <div className="bg-blue-950/20 border border-blue-900/30 rounded p-3.5 flex flex-col justify-center">
+            <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Matching Recommendations</span>
+            <span className="text-xl font-bold text-emerald-400 mt-1">{validationSummary.matchesCount}</span>
+            <span className="text-[9px] text-slate-500 mt-0.5 uppercase tracking-tighter font-bold">Standard builds</span>
+          </div>
+          
+          <div className="bg-blue-950/20 border border-blue-900/30 rounded p-3.5 flex flex-col justify-center">
+            <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Mismatched Recommendations</span>
+            <span className="text-xl font-bold text-amber-500 mt-1">{validationSummary.mismatchesCount}</span>
+            <span className="text-[9px] text-slate-500 mt-0.5 uppercase tracking-tighter">Trade-off deviations</span>
+          </div>
+        </div>
+
+        {/* Detailed Audit Table */}
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-b border-white/10 text-[10px] font-mono text-slate-400 uppercase tracking-wider">
+                <th className="py-2 pl-2">Component</th>
+                <th className="py-2">Expected Literature Class</th>
+                <th className="py-2">TOPSIS Recommendation</th>
+                <th className="py-2">Actual Class</th>
+                <th className="py-2">Status</th>
+                <th className="py-2 pr-2">Engineering Rationale</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/5 text-xs font-sans">
+              {validationSummary.results.map((res, index) => (
+                <tr key={index} className="hover:bg-white/5 transition-colors text-slate-300">
+                  <td className="py-3 pl-2 font-semibold text-white">{res.component}</td>
+                  <td className="py-3 text-slate-400 font-mono text-[11px]">{res.expectedClass}</td>
+                  <td className="py-3 text-blue-300 font-medium font-mono text-[11px]">{res.actualMaterialName}</td>
+                  <td className="py-3 text-slate-400 font-mono text-[11px]">{res.actualMaterialClass}</td>
+                  <td className="py-3">
+                    {res.isMatch ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                        <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
+                        MATCH
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20">
+                        <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
+                        DEVIATION
+                      </span>
+                    )}
+                  </td>
+                  <td className="py-3 text-[11px] text-slate-400 leading-relaxed font-sans pr-2 max-w-xs md:max-w-md lg:max-w-lg">
+                    {res.reason}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

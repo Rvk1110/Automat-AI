@@ -22,7 +22,7 @@ import {
 } from 'recharts';
 import { Material, ComponentType, CriteriaWeights, TopsisResult } from '../types';
 import { MATERIALS, CLASS_COLORS, COMPONENT_PROFILES } from '../data';
-import { runTopsis } from '../utils';
+import { runTopsis } from '../services/topsis_service';
 
 interface SelectionViewProps {
   selectedComponent: ComponentType;

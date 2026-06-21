@@ -17,6 +17,8 @@ import {
 import { motion } from 'motion/react';
 import { Material, ComponentType, CriteriaWeights, TopsisResult } from '../types';
 import { CLASS_COLORS } from '../data';
+import { fetchExplanation } from '../services/gemini_service';
+import { calculateAttribution } from '../services/attribution_service';
 import { generateScientificExplanation } from '../utils';
 
 interface ExplainableAIViewProps {
@@ -60,23 +62,21 @@ export default function ExplainableAIView({
     return { gap, level, color, stroke, pct };
   }, [topResult, runnerUpResult]);
 
-  // Contribution values
+  // Contribution attribution values for the Rank 1 material selection
   const contributions = useMemo(() => {
-    const keys: (keyof CriteriaWeights)[] = ['strength', 'weight', 'cost', 'corrosion', 'wear', 'sustainability'];
-    const labels = ['Mechanical Strength', 'Mass Reduction', 'Cost efficiency', 'Corrosion Shield', 'Wear Resistance', 'Eco Sustainability'];
+    if (!topResult) return [];
+    
+    const attr = calculateAttribution(topResult.material, criteriaWeights);
+    const keys = ['strength', 'weight', 'cost', 'corrosion', 'wear', 'sustainability'];
+    const labels = ['Mechanical Strength', 'Mass Reduction', 'Cost Efficiency', 'Corrosion Shield', 'Wear Resistance', 'Eco Sustainability'];
     const colors = ['bg-blue-500', 'bg-emerald-500', 'bg-yellow-500', 'bg-purple-500', 'bg-cyan-500', 'bg-teal-500'];
-    const total = keys.reduce((sum, k) => sum + criteriaWeights[k], 0);
 
-    return keys.map((key, idx) => {
-      const weight = criteriaWeights[key];
-      const percent = total > 0 ? (weight / total) * 100 : 16.6;
-      return {
-        label: labels[idx],
-        percent: Math.round(percent),
-        colorClass: colors[idx]
-      };
-    });
-  }, [criteriaWeights]);
+    return keys.map((key, idx) => ({
+      label: labels[idx],
+      percent: attr[key] || 0,
+      colorClass: colors[idx]
+    }));
+  }, [topResult, criteriaWeights]);
 
   // Formatted Mathematical Weight Vectors for academic look
   const vectorString = useMemo(() => {
@@ -107,37 +107,24 @@ export default function ExplainableAIView({
 
     const controller = new AbortController();
 
-    async function fetchExplanation() {
+    async function loadExplanation() {
       try {
-        const response = await fetch('/api/explain', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            component: selectedComponent,
-            topMaterial: topResult.material,
-            runnerUpMaterial: runnerUpResult.material,
-            topScore: topResult.score,
-            runnerUpScore: runnerUpResult.score,
-            weights: criteriaWeights,
-          }),
-          signal: controller.signal,
-        });
-
-        if (!response.ok) {
-          const errData = await response.json().catch(() => ({}));
-          throw new Error(errData.error || `HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
+        const data = await fetchExplanation(
+          selectedComponent,
+          topResult.material,
+          runnerUpResult.material,
+          topResult.score,
+          runnerUpResult.score,
+          criteriaWeights,
+          controller.signal
+        );
         if (isMounted) {
           setAiExplanation(data);
           setLoading(false);
         }
       } catch (err: any) {
         if (err.name !== 'AbortError') {
-          console.warn('Failed to generate AI explanation:', err);
+          console.warn('Failed to load AI explanation:', err);
           if (isMounted) {
             setApiError(err.message || 'Unknown error');
             setLoading(false);
@@ -147,7 +134,7 @@ export default function ExplainableAIView({
     }
 
     const debounceTimer = setTimeout(() => {
-      fetchExplanation();
+      loadExplanation();
     }, 400);
 
     return () => {
