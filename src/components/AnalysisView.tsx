@@ -99,12 +99,13 @@ export default function AnalysisView() {
     });
   }, [comparisonMaterials]);
 
-  // 2. Bubble Chart: Y=Strength, X=Cost Index, Size=Sustainability
+  // 2. Bubble/Ashby Chart Data: Y=Strength, X=Cost Index, Size=Sustainability, density = X coordinate for Ashby
   const bubbleData = useMemo(() => {
     return MATERIALS.map(m => ({
       name: `${m.name} (${m.grade})`,
       cost: m.cost,
       strength: m.strength,
+      density: m.density,
       sustainability: m.sustainability, // Used for bubble size
       class: m.materialClass,
       color: CLASS_COLORS[m.materialClass]
@@ -391,7 +392,7 @@ export default function AnalysisView() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
         {/* Bubble Chart: Cost vs Strength (Sust = bubble size) */}
-        <div id="panel-compare-bubble" className="bg-white/5 border border-white/10 rounded-lg p-4 flex flex-col justify-between h-[360px]">
+        <div id="panel-compare-bubble" className="bg-white/5 border border-white/10 rounded-lg p-4 flex flex-col justify-between h-[440px]">
           <div>
             <h4 className="text-xs font-bold border-l-2 border-blue-500 pl-2 uppercase tracking-wide text-white mb-2">
               Cost vs. Strength Bubble Chart
@@ -450,14 +451,14 @@ export default function AnalysisView() {
         </div>
 
         {/* Dynamic Pearson Heatmap Grid */}
-        <div id="panel-heatmap" className="bg-white/5 border border-white/10 rounded-lg p-4 flex flex-col justify-between h-[360px]">
+        <div id="panel-heatmap" className="bg-white/5 border border-white/10 rounded-lg p-4 flex flex-col justify-between h-[440px]">
           <div>
             <h4 className="text-xs font-bold border-l-2 border-blue-500 pl-2 uppercase tracking-wide text-white mb-2">
               Pearson Correlation Matrix Heatmap
             </h4>
           </div>
           <div className="flex-1 mt-2 mb-1 flex items-center justify-center">
-            <div className="grid grid-cols-9 gap-1 font-mono text-[9px] w-full max-w-[420px]">
+            <div className="grid grid-cols-9 gap-1 font-mono text-[9px] w-full max-w-[340px]">
               {/* Header Corner cell */}
               <div className="flex items-center justify-center p-1 font-bold text-slate-500">Parameters</div>
               {heatmapData.features.map((feat, idx) => (
