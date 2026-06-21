@@ -199,18 +199,19 @@ export function generateScientificExplanation(
   tradeoffs: string;
   conclusion: string;
 } {
-  const delta = (topScore - runnerUpScore).toFixed(3);
+  const delta = (topScore - runnerUpScore).toFixed(4);
   const strengthW = (rawWeights.strength * 100).toFixed(0);
   const weightW = (rawWeights.weight * 100).toFixed(0);
   const costW = (rawWeights.cost * 100).toFixed(0);
+  const sustainabilityW = (rawWeights.sustainability * 100).toFixed(0);
 
-  const summary = `Based on multi-criteria decision analysis (MCDA) optimized via the TOPSIS methodology, ${top.name} (${top.grade}) is identified as the mathematically optimal choice for the ${component} assembly, achieving an aggregate similarity index of ${(topScore * 100).toFixed(1)}%. This recommendation is heavily driven by the current prioritization index of Strength (${strengthW}%), Mass Reduction (${weightW}%), and Cost Efficiency (${costW}%).`;
+  const summary = `${top.name} (${top.grade}) ranks first with a TOPSIS score of ${topScore.toFixed(4)}. This selection is driven by the criteria weights: Yield Strength (${strengthW}%), Weight Reduction (${weightW}%), Cost Efficiency (${costW}%), and Sustainability (${sustainabilityW}%), where the material satisfies the primary requirements of the ${component}.`;
 
-  const comparison = `Comparing the top-ranked candidate ${top.name} with the immediate secondary runner-up ${runnerUp.name} (${runnerUp.grade}) reveals a performance differential of ΔS = ${delta}. While ${runnerUp.name} exhibits competitive parameters, specifically in ${runnerUp.strength > top.strength ? `ultimate tensile strength (${runnerUp.strength} MPa vs ${top.strength} MPa)` : `lower structural mass density (${runnerUp.density} g/cm³ v.s. ${top.density} g/cm³)`}, it fails to reconcile the holistic constraints imposed across secondary objectives like corrosion resistance and sustainability metrics.`;
+  const comparison = `The runner-up ${runnerUp.name} (${runnerUp.grade}) ranks lower with a TOPSIS score of ${runnerUpScore.toFixed(4)}, creating a score gap (ΔScore) of ${delta}. While the runner-up offers competitive properties, it fails to achieve the same overall multi-criteria score balance as the primary recommendation.`;
 
-  const tradeoffs = `Selecting ${top.name} involves deliberate compromises. Although it scores extremely well in ${top.strength > 500 ? 'high-load mechanical boundaries' : 'balanced weight savings'}, it carries a relative ${top.cost > runnerUp.cost ? `financial premium with a higher raw cost factor of ${top.cost} USD/kg compared to ${runnerUp.cost} USD/kg` : `density footprint of ${top.density} g/cm³ requiring intelligent gauge profiling to prevent localized mass aggregation`}. Multi-axial stress modeling supports this selection because the specific stiffness of the primary material offsets any dimensional-gauge packaging penalties.`;
+  const tradeoffs = `Selecting ${top.name} involves key compromises. While it offers excellent yield strength of ${top.strength} MPa and cost index of ${top.cost}, it requires balancing weight efficiency (density of ${top.density} g/cm³), corrosion resistance (${top.corrosion}/10), wear resistance (${top.wear}/10), and sustainability (${top.sustainability}/10).`;
 
-  const conclusion = `Thermodynamic and viscoelastic structural evaluations indicate that ${top.name} satisfies standard Federal Motor Vehicle Safety Standards (FMVSS) for ${component} integration, offering an optimized compromise between structural strength-to-weight performance and carbon-offset lifecycle assessments without inducing critical fatigue stress or rapid corrosion propagation.`;
+  const conclusion = `Based on this multi-criteria analysis, ${top.name} is recommended for implementation in the ${component}. It represents the most mathematically optimized balance of strength, density, cost, and durability for standard automotive operating conditions.`;
 
   return { summary, comparison, tradeoffs, conclusion };
 }

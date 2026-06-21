@@ -2,9 +2,7 @@ import { useState, useMemo } from 'react';
 import Sidebar from './components/Sidebar';
 import DashboardView from './components/DashboardView';
 import SelectionView from './components/SelectionView';
-import AnalysisView from './components/AnalysisView';
 import ExplainableAIView from './components/ExplainableAIView';
-import ProjectInsightsView from './components/ProjectInsightsView';
 import MaterialFingerprint from './components/MaterialFingerprint';
 import SensitivityAnalysisView from './components/SensitivityAnalysisView';
 import ComparisonView from './components/ComparisonView';
@@ -14,6 +12,7 @@ import { ComponentType, CriteriaWeights, RecommendationHistory } from './types';
 import { INITIAL_HISTORY, COMPONENT_PROFILES, MATERIALS } from './data';
 import { runTopsis } from './services/topsis_service';
 import { exportReportToPDF } from './services/pdf_service';
+import { filterMaterialsByComponent } from './services/dataset_service';
 import { HelpCircle, Terminal, RefreshCw, FileCode, Printer } from 'lucide-react';
 
 export default function App() {
@@ -26,8 +25,9 @@ export default function App() {
 
   // Dynamic TOPSIS calculations triggered when weights change
   const topsisRankings = useMemo(() => {
-    return runTopsis(MATERIALS, criteriaWeights);
-  }, [criteriaWeights]);
+    const filtered = filterMaterialsByComponent(MATERIALS, selectedComponent);
+    return runTopsis(filtered, criteriaWeights);
+  }, [selectedComponent, criteriaWeights]);
 
   // Navigate to Selection and optionally pre-set component
   const handleNavigateToSelection = (componentName?: ComponentType) => {
@@ -144,10 +144,6 @@ export default function App() {
               />
             )}
 
-            {activeTab === 'analysis' && (
-              <AnalysisView />
-            )}
-
             {activeTab === 'fingerprint' && (
               <MaterialFingerprint 
                 selectedComponent={selectedComponent}
@@ -190,10 +186,6 @@ export default function App() {
                 criteriaWeights={criteriaWeights}
                 topsisRankings={topsisRankings}
               />
-            )}
-
-            {activeTab === 'insights' && (
-              <ProjectInsightsView />
             )}
           </div>
 

@@ -29,6 +29,7 @@ import {
 import { Material, ComponentType, CriteriaWeights, TopsisResult } from '../types';
 import { MATERIALS, COMPONENT_PROFILES } from '../data';
 import { runTopsis } from '../services/topsis_service';
+import { filterMaterialsByComponent } from '../services/dataset_service';
 
 interface SensitivityAnalysisViewProps {
   selectedComponent: ComponentType;
@@ -60,6 +61,7 @@ export default function SensitivityAnalysisView({
     const baseTopResult = topsisRankings[0];
     const baseTopMat = baseTopResult.material;
     const baseScore = baseTopResult.score;
+    const filtered = filterMaterialsByComponent(MATERIALS, selectedComponent);
 
     return criteriaKeys.map(targetKey => {
       // 1. Vary targetKey up by +0.15
@@ -67,7 +69,7 @@ export default function SensitivityAnalysisView({
       weightsPlus[targetKey] = Math.min(0.95, weightsPlus[targetKey] + 0.15);
       const totalPlus = criteriaKeys.reduce((s, k) => s + weightsPlus[k], 0);
       criteriaKeys.forEach(k => weightsPlus[k] /= totalPlus);
-      const rankingsPlus = runTopsis(MATERIALS, weightsPlus);
+      const rankingsPlus = runTopsis(filtered, weightsPlus);
       const scorePlus = rankingsPlus.find(r => r.material.id === baseTopMat.id)?.score || baseScore;
 
       // 2. Vary targetKey down by -0.15
@@ -75,7 +77,7 @@ export default function SensitivityAnalysisView({
       weightsMinus[targetKey] = Math.max(0.01, weightsMinus[targetKey] - 0.15);
       const totalMinus = criteriaKeys.reduce((s, k) => s + weightsMinus[k], 0);
       criteriaKeys.forEach(k => weightsMinus[k] /= totalMinus);
-      const rankingsMinus = runTopsis(MATERIALS, weightsMinus);
+      const rankingsMinus = runTopsis(filtered, weightsMinus);
       const scoreMinus = rankingsMinus.find(r => r.material.id === baseTopMat.id)?.score || baseScore;
 
       return {
@@ -94,6 +96,7 @@ export default function SensitivityAnalysisView({
     
     // Track current top 5 candidates
     const baseTop5 = topsisRankings.slice(0, 5).map(r => r.material);
+    const filtered = filterMaterialsByComponent(MATERIALS, selectedComponent);
 
     return steps.map(val => {
       const tempWeights = { ...criteriaWeights };
@@ -111,7 +114,7 @@ export default function SensitivityAnalysisView({
         }
       });
 
-      const stepRankings = runTopsis(MATERIALS, tempWeights);
+      const stepRankings = runTopsis(filtered, tempWeights);
       const row: any = { step: `${Math.round(val * 100)}%` };
       
       baseTop5.forEach(mat => {
@@ -126,6 +129,7 @@ export default function SensitivityAnalysisView({
   // Compute Confidence Variation Chart Data
   const confidenceVariationData = useMemo(() => {
     const steps = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0];
+    const filtered = filterMaterialsByComponent(MATERIALS, selectedComponent);
 
     return steps.map(val => {
       const tempWeights = { ...criteriaWeights };
@@ -143,7 +147,7 @@ export default function SensitivityAnalysisView({
         }
       });
 
-      const stepRankings = runTopsis(MATERIALS, tempWeights);
+      const stepRankings = runTopsis(filtered, tempWeights);
       const gap = stepRankings.length >= 2 ? (stepRankings[0].score - stepRankings[1].score) : 0;
       return {
         step: `${Math.round(val * 100)}%`,
@@ -156,7 +160,8 @@ export default function SensitivityAnalysisView({
   const baselineTop = useMemo(() => {
     const profile = COMPONENT_PROFILES[selectedComponent];
     if (!profile) return null;
-    const baseRanks = runTopsis(MATERIALS, profile.weights);
+    const filtered = filterMaterialsByComponent(MATERIALS, selectedComponent);
+    const baseRanks = runTopsis(filtered, profile.weights);
     return baseRanks[0]?.material;
   }, [selectedComponent]);
 

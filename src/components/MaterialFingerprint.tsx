@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { 
   ResponsiveContainer, 
   RadarChart, 
@@ -44,6 +44,21 @@ export default function MaterialFingerprint({
   const [selectedCompareIds, setSelectedCompareIds] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [classFilter, setClassFilter] = useState<string>('All');
+  const [showDropdown, setShowDropdown] = useState(false);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+
+  // Click outside to close dropdown
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
+        setShowDropdown(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
   
   // Available material classes for filtering
   const materialClasses = useMemo(() => {
@@ -76,6 +91,10 @@ export default function MaterialFingerprint({
         return prev.filter(id => id !== materialId);
       } else {
         if (prev.length >= 6) return prev; // Limit comparison to 6 for chart readability
+        // Clear search, filter, and close popover
+        setSearchQuery('');
+        setClassFilter('All');
+        setShowDropdown(false);
         return [...prev, materialId];
       }
     });
@@ -239,7 +258,7 @@ export default function MaterialFingerprint({
           </div>
 
           {/* Search Engine for 2700+ materials */}
-          <div className="bg-white/5 border border-white/10 rounded-lg p-4 space-y-4 relative">
+          <div ref={searchContainerRef} className="bg-white/5 border border-white/10 rounded-lg p-4 space-y-4 relative">
             <div>
               <h2 className="text-xs font-bold border-l-2 border-blue-500 pl-2 uppercase tracking-wide text-white">
                 Add Material to Arena
@@ -254,14 +273,21 @@ export default function MaterialFingerprint({
                   type="text"
                   placeholder="Search by name or grade (e.g. Al, Steel, Grade)..."
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setShowDropdown(true);
+                  }}
+                  onFocus={() => setShowDropdown(true)}
                   className="w-full bg-[#0B0F19] border border-white/10 rounded pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500/50"
                 />
               </div>
 
               <select
                 value={classFilter}
-                onChange={(e) => setClassFilter(e.target.value)}
+                onChange={(e) => {
+                  setClassFilter(e.target.value);
+                  setShowDropdown(true);
+                }}
                 className="bg-[#0B0F19] border border-white/10 rounded px-2 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-blue-500/50 max-w-[120px]"
               >
                 <option value="All">All Categories</option>
@@ -272,7 +298,7 @@ export default function MaterialFingerprint({
             </div>
 
             {/* Results Autocomplete Popover */}
-            {searchResults.length > 0 && (
+            {showDropdown && searchResults.length > 0 && (
               <div className="absolute left-4 right-4 bg-[#0B0F19] border border-white/10 rounded shadow-2xl z-20 divide-y divide-white/5 max-h-[220px] overflow-y-auto">
                 {searchResults.map((mat) => {
                   const isCompared = selectedCompareIds.includes(mat.id);

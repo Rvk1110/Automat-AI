@@ -18,3 +18,18 @@ export function getMaterialsByClass(materialClass: Material['materialClass']): M
 export function getComponentProfile(component: ComponentType) {
   return COMPONENT_PROFILES[component];
 }
+
+export const COMPONENT_COMPATIBLE_CLASSES: Record<ComponentType, string[]> = {
+  'Hood': ['Aluminum Alloys', 'Magnesium Alloys', 'Carbon Fiber Reinforced Polymer', 'Titanium Alloys'],
+  'Chassis': ['Steel', 'Stainless Steel', 'Aluminum Alloys', 'Titanium Alloys'],
+  'Door Panel': ['Steel', 'Stainless Steel', 'Aluminum Alloys'],
+  'Bumper': ['Glass Fiber Reinforced Polymer', 'Carbon Fiber Reinforced Polymer'],
+  'Wheel Rim': ['Aluminum Alloys', 'Magnesium Alloys', 'Titanium Alloys'],
+  'Engine Block': ['Cast Iron', 'Steel', 'Stainless Steel', 'Aluminum Alloys']
+};
+
+export function filterMaterialsByComponent(materials: Material[], component: ComponentType): Material[] {
+  const allowed = COMPONENT_COMPATIBLE_CLASSES[component];
+  if (!allowed) return materials;
+  return materials.filter(m => allowed.includes(m.materialClass));
+}

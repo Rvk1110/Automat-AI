@@ -37,6 +37,7 @@ import { Material, RecommendationHistory, ComponentType } from '../types';
 import { MATERIALS, CLASS_COLORS, COMPONENT_PROFILES } from '../data';
 import { runTopsis } from '../services/topsis_service';
 import { validateRecommendations } from '../services/validation_service';
+import { filterMaterialsByComponent } from '../services/dataset_service';
 
 interface DashboardViewProps {
   onNavigateToSelection: (componentName?: ComponentType) => void;
@@ -56,7 +57,8 @@ export default function DashboardView({
   const validationSummary = useMemo(() => {
     const defaultRecs = (Object.keys(COMPONENT_PROFILES) as ComponentType[]).map((comp) => {
       const profile = COMPONENT_PROFILES[comp];
-      const rankings = runTopsis(MATERIALS, profile.weights);
+      const filtered = filterMaterialsByComponent(MATERIALS, comp);
+      const rankings = runTopsis(filtered, profile.weights);
       const top = rankings[0].material;
       return {
         component: comp,
@@ -261,7 +263,7 @@ export default function DashboardView({
       <div id="dashboard-charts" className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* Chart 1: Material Distribution Pie */}
-        <div id="panel-pie" className="bg-white/5 border border-white/10 rounded-lg p-4 flex flex-col justify-between h-[380px]">
+        <div id="panel-pie" className="lg:col-start-2 bg-white/5 border border-white/10 rounded-lg p-4 flex flex-col justify-between h-[380px]">
           <div>
             <h2 className="text-xs font-bold border-l-2 border-blue-500 pl-2 uppercase tracking-wide text-white">
               Class Distribution
@@ -290,94 +292,6 @@ export default function DashboardView({
                 />
                 <Legend iconType="circle" wrapperStyle={{ fontSize: '11px', color: '#94a3b8' }} />
               </PieChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Chart 2: Strength vs Density Ashby Scatter */}
-        <div id="panel-scatter" className="bg-white/5 border border-white/10 rounded-lg p-4 flex flex-col justify-between h-[380px]">
-          <div>
-            <h2 className="text-xs font-bold border-l-2 border-blue-500 pl-2 uppercase tracking-wide text-white">
-              Strength vs. Density Coordinates
-            </h2>
-            <p className="text-[11px] text-slate-400 mt-1.5 font-sans">Ashby scatter coordinates representing yield limit compared to overall mass density.</p>
-          </div>
-          <div className="flex-1 min-h-[220px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <ScatterChart margin={{ top: 15, right: 10, bottom: -5, left: -20 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                <XAxis 
-                  type="number" 
-                  dataKey="density" 
-                  name="Density" 
-                  unit="g/cc" 
-                  stroke="#64748b" 
-                  fontSize={10} 
-                  tickFormatter={(v) => v.toFixed(1)}
-                />
-                <YAxis 
-                  type="number" 
-                  dataKey="strength" 
-                  name="Strength" 
-                  unit="MPa" 
-                  stroke="#64748b" 
-                  fontSize={10}
-                />
-                <Tooltip 
-                  cursor={{ strokeDasharray: '3 3' }}
-                  content={({ active, payload }) => {
-                    if (active && payload && payload.length) {
-                      const data = payload[0].payload;
-                      return (
-                        <div className="bg-[#0B0F19] border border-white/10 p-3 rounded shadow-xl">
-                          <p className="text-xs font-bold text-white mb-1.5">{data.name}</p>
-                          <div className="space-y-0.5 text-[11px] text-slate-400 font-mono">
-                            <p>Class: <span style={{ color: data.color }} className="font-bold">{data.class}</span></p>
-                            <p>Density: <span className="text-white">{data.density} g/cm³</span></p>
-                            <p>Strength: <span className="text-white">{data.strength} MPa</span></p>
-                          </div>
-                        </div>
-                      );
-                    }
-                    return null;
-                  }}
-                />
-                <Scatter name="Materials" data={scatterData}>
-                  {scatterData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Scatter>
-              </ScatterChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Chart 3: System Visual Fingerprint Radar */}
-        <div id="panel-radar" className="bg-white/5 border border-white/10 rounded-lg p-4 flex flex-col justify-between h-[380px]">
-          <div>
-            <h2 className="text-xs font-bold border-l-2 border-blue-500 pl-2 uppercase tracking-wide text-white">
-              Aggregate Material Fingerprint
-            </h2>
-            <p className="text-[11px] text-slate-400 mt-1.5 font-sans">Multi-dimensional operational performance averaged across all available materials.</p>
-          </div>
-          <div className="flex-1 min-h-[220px] flex items-center justify-center">
-            <ResponsiveContainer width="100%" height="100%">
-              <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
-                <PolarGrid stroke="#1e293b" />
-                <PolarAngleAxis dataKey="subject" stroke="#94a3b8" fontSize={9} />
-                <PolarRadiusAxis angle={30} domain={[0, 100]} stroke="#64748b" fontSize={8} />
-                <Radar 
-                  name="System Average" 
-                  dataKey="value" 
-                  stroke="#3b82f6" 
-                  fill="#3b82f6" 
-                  fillOpacity={0.35} 
-                />
-                <Tooltip 
-                  contentStyle={{ backgroundColor: '#0B0F19', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px' }}
-                  itemStyle={{ color: '#fff' }}
-                />
-              </RadarChart>
             </ResponsiveContainer>
           </div>
         </div>

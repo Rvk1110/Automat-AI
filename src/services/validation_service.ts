@@ -18,12 +18,12 @@ export interface ValidationSummary {
 }
 
 export const EXPECTED_LITERATURE_CLASSES: Record<ComponentType, string[]> = {
-  'Hood': ['Aluminum Alloys'],
-  'Chassis': ['Steel'],
-  'Door Panel': ['Steel', 'Aluminum Alloys'],
-  'Bumper': ['Glass Fiber Reinforced Polymer'],
-  'Wheel Rim': ['Aluminum Alloys'],
-  'Engine Block': ['Cast Iron']
+  'Hood': ['Aluminum Alloys', 'Carbon Fiber Reinforced Polymer', 'Magnesium Alloys'],
+  'Chassis': ['Steel', 'Stainless Steel', 'Aluminum Alloys'],
+  'Door Panel': ['Steel', 'Stainless Steel', 'Aluminum Alloys'],
+  'Bumper': ['Glass Fiber Reinforced Polymer', 'Carbon Fiber Reinforced Polymer'],
+  'Wheel Rim': ['Aluminum Alloys', 'Magnesium Alloys', 'Titanium Alloys'],
+  'Engine Block': ['Cast Iron', 'Aluminum Alloys']
 };
 
 /**

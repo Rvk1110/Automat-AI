@@ -24,6 +24,7 @@ import { MATERIALS, COMPONENT_PROFILES } from '../data';
 import { runTopsis } from '../services/topsis_service';
 import { runWeightedScoring } from '../services/weighted_scoring_service';
 import { EXPECTED_LITERATURE_CLASSES } from '../services/validation_service';
+import { filterMaterialsByComponent } from '../services/dataset_service';
 
 interface BenchmarkViewProps {
   selectedComponent: ComponentType;
@@ -47,13 +48,14 @@ export default function BenchmarkView({
 
     const cases = components.map(comp => {
       const profile = COMPONENT_PROFILES[comp];
+      const filtered = filterMaterialsByComponent(MATERIALS, comp);
       
       // Run TOPSIS
-      const topsisRes = runTopsis(MATERIALS, profile.weights);
+      const topsisRes = runTopsis(filtered, profile.weights);
       const topsisTop = topsisRes[0].material;
       
       // Run Simple Additive Weighting (SAW)
-      const sawRes = runWeightedScoring(MATERIALS, profile.weights);
+      const sawRes = runWeightedScoring(filtered, profile.weights);
       const sawTop = sawRes[0].material;
 
       // Literature expected
@@ -94,7 +96,8 @@ export default function BenchmarkView({
   // Compare active component TOPSIS rankings with SAW rankings
   const activeComparisonData = useMemo(() => {
     // Run SAW on active component weights
-    const sawRankings = runWeightedScoring(MATERIALS, criteriaWeights);
+    const filtered = filterMaterialsByComponent(MATERIALS, selectedComponent);
+    const sawRankings = runWeightedScoring(filtered, criteriaWeights);
     
     // Grab top 5 TOPSIS recommendations
     return topsisRankings.slice(0, 5).map(t => {
